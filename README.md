@@ -1,5 +1,5 @@
 
-# WhatsApp Online/Offline Tracker
+# WhatsApp method 
 
 Track multiple WhatsApp contacts and get **online/offline notifications** via the [ntfy](https://ntfy.sh) service.  
 This setup bypasses WhatsApp’s CSP (Content Security Policy) restrictions using **Cloudflare Workers**.
@@ -148,3 +148,12 @@ CSP bypass using Cloudflare Workers
 
 
 ---
+License
+
+MIT License
+
+---
+
+Do you want me to **also include full `tracker.js` code in the same README** under a “Code” section, or keep it **separate file in the repo** (`tracker.js` + `worker.js`)?  
+
+Shall I **create full repo structure example** (folders + file names) so you can upload directly
