@@ -1,0 +1,115 @@
+q// ==UserScript==
+// @name         WhatsApp Online/Offline Tracker (ntfy via Proxy + CSP Bypass)
+// @namespace    http://tampermonkey.net/
+// @version      3.5
+// @description  Track multiple WhatsApp contacts and send alerts via Cloudflare Worker proxy bypassing CSP with counters & reset option
+// @match        *://*.whatsapp.com/*
+// @grant        GM_xmlhttpRequest
+// ==/UserScript==
+
+(function () {
+    'use strict';
+
+    const proxyUrl = "https://floral-cell-1a10.ashishsinvns.workers.dev/";
+    const contacts = ["Contact1", "Contact2"]; // Example: ["Rahul", "Mummy"]
+
+    let lastStatus = {};
+    let statusCount = {}; // { contactName: { online: x, offline: y } }
+
+    // Initialize counters
+    function initCounters() {
+        contacts.forEach(contact => {
+            if (!statusCount[contact]) {
+                statusCount[contact] = { online: 0, offline: 0 };
+            }
+        });
+    }
+
+    // Reset counters manually
+    function resetCounters() {
+        contacts.forEach(contact => {
+            statusCount[contact] = { online: 0, offline: 0 };
+        });
+        console.log("WhatsApp Tracker: Counters reset");
+        alert("All counters reset!");
+    }
+
+    // Add reset button on WhatsApp UI
+    function addResetButton() {
+        if (document.getElementById("resetTrackerBtn")) return;
+
+        const btn = document.createElement("button");
+        btn.id = "resetTrackerBtn";
+        btn.textContent = "Reset Counters";
+        btn.style.position = "fixed";
+        btn.style.top = "10px";
+        btn.style.right = "10px";
+        btn.style.zIndex = "9999";
+        btn.style.padding = "5px 10px";
+        btn.style.background = "#25D366";
+        btn.style.color = "#fff";
+        btn.style.border = "none";
+        btn.style.borderRadius = "5px";
+        btn.style.cursor = "pointer";
+        btn.onclick = resetCounters;
+
+        document.body.appendChild(btn);
+    }
+
+    function sendNotification(contact, status) {
+        if (!statusCount[contact]) initCounters();
+
+        if (status === "online") {
+            statusCount[contact].online++;
+        } else {
+            statusCount[contact].offline++;
+        }
+
+        const message = `
+${contact} is ${status}
+(Online: ${statusCount[contact].online} baar | Offline: ${statusCount[contact].offline} baar)
+
+Channel: https://t.me/PATEL_VNS
+User: @coder_vns
+        `.trim();
+
+        GM_xmlhttpRequest({
+            method: "POST",
+            url: proxyUrl,
+            data: message,
+            headers: { "Content-Type": "text/plain" }
+        });
+    }
+
+    function checkStatus() {
+        contacts.forEach(contactName => {
+            const onlineElem = document.querySelector(`span[title="${contactName}"]`)?.closest("header").querySelector("span[title='online']");
+            const currentStatus = onlineElem ? "online" : "offline";
+
+            if (lastStatus[contactName] !== currentStatus) {
+                sendNotification(contactName, currentStatus);
+                lastStatus[contactName] = currentStatus;
+            }
+        });
+    }
+
+    // Auto reset daily at midnight
+    function setupDailyReset() {
+        const now = new Date();
+        const millisTillMidnight =
+            new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0) - now;
+        setTimeout(() => {
+            resetCounters();
+            setupDailyReset(); // set again for next day
+        }, millisTillMidnight);
+    }
+
+    // Initialize
+    initCounters();
+    addResetButton();
+    setupDailyReset();
+
+    const observer = new MutationObserver(checkStatus);
+    observer.observe(document.body, { childList: true, subtree: true });
+    setInterval(checkStatus, 2000);
+})();
